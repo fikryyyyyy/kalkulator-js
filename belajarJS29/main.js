@@ -1,59 +1,84 @@
 const readline = require("readline-sync");
 
-let history = []; 
-let previousResult = 0; 
-while (true) {
-  const angkaPertama = previousResult || parseFloat(readline.question("Masukan angka pertama : "));
-  const operator = readline.question("Pilih operator (+,-,*,/,%) : ");
-  const angkaKedua = parseFloat(readline.question("Masukan angka kedua : "));
+let ulangi = true;
+let history = []; // Menyimpan riwayat kalkulasi
+let previousResult = null; // Menyimpan hasil kalkulasi terakhir
 
-  const requiredOperator = ["+", "-", "*", "/", "%"];
+while (ulangi) {
+    let angkaPertama = previousResult !== null ? previousResult : readline.question("Masukkan Angka Pertama: ");
+    
+    // Cek jika hasil sebelumnya digunakan
+    if (previousResult !== null) {
+        const usePrevious = readline.question("Gunakan hasil sebelumnya? (y/n): ");
+        if (usePrevious.toLowerCase() === "y") {
+            angkaPertama = previousResult;
+        } else {
+            angkaPertama = readline.question("Masukkan Angka Pertama: ");
+        }
+    }
 
-  if (isNaN(angkaPertama) || isNaN(angkaKedua)) {
-    console.log("Inputan anda tidak valid");
-    continue;
-  } else if (!requiredOperator.includes(operator)) {
-    console.log("Pilih sesuai operator yang tersedia");
-    continue;
-  }
+    const operator = readline.question("Pilih operator (+, -, *, /, %): ");
+    let angkaKedua = readline.question("Masukkan Angka Kedua: ");
 
-  let hasil;
-  try {
-    hasil = processHasil(angkaPertama, angkaKedua, operator);
-  } catch (e) {
-    console.log(e.message);
-    continue;
-  }
+    const requiredOperator = ["+", "-", "*", "/", "%"];
 
-  console.log(`Hasil nya adalah ${hasil}`);
-  history.push(`${angkaPertama} ${operator} ${angkaKedua} = ${hasil}`);
-  previousResult = hasil;
+    // Validasi input
+    if (isNaN(angkaPertama) || isNaN(angkaKedua)) {
+        console.log("Inputan anda tidak valid");
+    } else if (!requiredOperator.includes(operator)) {
+        console.log("Pilih sesuai operator yang tersedia");
+    } else {
+        // Memastikan angkaKedua adalah angka sebelum digunakan
+        angkaKedua = parseFloat(angkaKedua);
 
-  const choice = readline.question("Lanjutkan perhitungan? (y/n) : ");
-  if (choice.toLowerCase() !== 'y') {
-    break;
-  }
+        // Penanganan untuk pembagian
+        if (operator === "/" && angkaKedua === 0) {
+            console.log("Angka kedua tidak boleh 0. Silakan masukkan angka kedua lagi.");
+            angkaKedua = readline.question("Masukkan Angka Kedua: ");
+            angkaKedua = parseFloat(angkaKedua); // Mengkonversi input baru ke angka
+        }
+
+        const hasil = processHasil(parseFloat(angkaPertama), operator, angkaKedua);
+        if (typeof hasil === "string") {
+            console.log(hasil); // Tampilkan pesan kesalahan jika ada
+        } else {
+            console.log(`Hasil: ${hasil}`);
+            previousResult = hasil; // Simpan hasil untuk kalkulasi berikutnya
+            history.push(`${angkaPertama} ${operator} ${angkaKedua} = ${hasil}`); // Simpan riwayat
+        }
+    }
+
+    const ulang = readline.question("Apakah ingin mengulang? (y/n): ");
+    if (ulang.toLowerCase() === "n") {
+        ulangi = false;
+        console.log("Riwayat Kalkulasi:");
+        showHistory();
+    }
 }
 
-console.log("Riwayat kalkulasi:");
-history.forEach((item, index) => {
-  console.log(`${index + 1}. ${item}`);
-});
+function processHasil(angkaPertama, operator, angkaKedua) {
+    switch (operator) {
+        case "+":
+            return angkaPertama + angkaKedua;
+        case "-":
+            return angkaPertama - angkaKedua;
+        case "*":
+            return angkaPertama * angkaKedua;
+        case "/":
+            return angkaPertama / angkaKedua; // Pembagian tidak lagi menangani 0 di sini
+        case "%":
+            return angkaPertama % angkaKedua;
+        default:
+            return "Operator tidak dikenali.";
+    }
+}
 
-function processHasil(inputanPertama, inputanKedua, operator) {
-  switch (operator) {
-    case "+":
-      return inputanPertama + inputanKedua;
-    case "-":
-      return inputanPertama - inputanKedua;
-    case "*":
-      return inputanPertama * inputanKedua;
-    case "/":
-      if (inputanKedua === 0) {
-        throw new Error("Angka kedua tidak boleh bernilai 0");
-      }
-      return inputanPertama / inputanKedua;
-    case "%":
-      return inputanPertama % inputanKedua;
-  }
+function showHistory() {
+    if (history.length === 0) {
+        console.log("Tidak ada riwayat kalkulasi.");
+    } else {
+        history.forEach((entry, index) => {
+            console.log(`${index + 1}: ${entry}`);
+        });
+    }
 }
